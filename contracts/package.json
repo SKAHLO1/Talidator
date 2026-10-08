@@ -1,0 +1,30 @@
+{
+  "name": "talidator-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx scripts/forge.ts forge build",
+    "test": "tsx scripts/forge.ts forge test -vv",
+    "anvil": "tsx scripts/forge.ts anvil --chain-id 31337",
+    "deploy:local": "tsx scripts/deploy.ts --network local",
+    "deploy:monad": "tsx scripts/deploy.ts --network monadTestnet",
+    "export-abi": "tsx scripts/export-abi.ts",
+    "demo:local": "tsx agents/demo.ts --network local",
+    "demo:monad": "tsx agents/demo.ts --network monadTestnet",
+    "validator": "tsx agents/validator-daemon.ts",
+    "request": "tsx agents/request.ts",
+    "deploy:keeper": "tsx scripts/deploy.ts --network monadTestnet --keeper",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1",
+    "@privy-io/node": "^0.35.0",
+    "viem": "^2.56.9"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
