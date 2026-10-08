@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: talidator-indexer
+description: Talidator — ERC-8004 Validation Registry on Monad (identities, quorum votes, escrow, challenges, slashing, reputation)
+# Single-chain indexer; keep ids per chain anyway so a mainnet chain can be added later without collisions.
+disable_default_cross_chain: true
+# Every activity row links to its transaction on the explorer.
+field_selection:
+  transaction_fields:
+    - hash
+contracts:
+  - name: IdentityRegistry
+    abi_file_path: ./abis/IdentityRegistry.json
+    events:
+      - event: AgentRegistered
+      - event: Registered
+      - event: Transfer
+  - name: ValidatorStaking
+    abi_file_path: ./abis/ValidatorStaking.json
+    events:
+      - event: Bonded
+      - event: UnbondingStarted
+      - event: Withdrawn
+      - event: Slashed
+  - name: ValidationRegistry
+    abi_file_path: ./abis/ValidationRegistry.json
+    events:
+      - event: ValidationRequested
+      - event: VoteSubmitted
+      - event: ValidationFinalized
+      - event: ResultOverturned
+  - name: Escrow
+    abi_file_path: ./abis/Escrow.json
+    events:
+      - event: Deposited
+      - event: Released
+      - event: Refunded
+  - name: ChallengeMarket
+    abi_file_path: ./abis/ChallengeMarket.json
+    events:
+      - event: ChallengeOpened
+      - event: ReviewSubmitted
+      - event: ChallengeResolved
+  - name: ReputationRegistry
+    abi_file_path: ./abis/ReputationRegistry.json
+    events:
+      - event: NewFeedback
+chains:
+  - id: 10143 # Monad testnet — synced via HyperSync (https://10143.hypersync.xyz)
+    start_block: 68246282
+    contracts:
+      - name: IdentityRegistry
+        address: "0x463E1cCE88F9dA94449D7E5fcD14b13859Af36C3"
+      - name: ValidatorStaking
+        address: "0x2B4f0D013e25FCc0d7c9d226cB2225B8cB23DFE2"
+      - name: ValidationRegistry
+        address: "0x7F2cf8FeABC1Cc7f2eA42371Bd912D587107E69d"
+      - name: Escrow
+        address: "0x22Ccc0840cD7d96D380E06bdd7fF8AF123E1e167"
+      - name: ChallengeMarket
+        address: "0x5Ac1Ee1129B93FFfC0d2C87F7e77032988234148"
+      - name: ReputationRegistry
+        address: "0xbaC5330762e788D06fb4711aabe704B9E6fCf792"
