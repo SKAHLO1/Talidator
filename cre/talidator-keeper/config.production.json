@@ -1,0 +1,8 @@
+{
+  "schedule": "0 */1 * * * *",
+  "chainSelectorName": "monad-testnet",
+  "keeperAddress": "0x213c61be671bd14d688f54b8Ccf224fD4680EC90",
+  "auditFlagsUrl": "https://YOUR-APP.vercel.app/api/audit/flags",
+  "batchLimit": 25,
+  "writeGasLimit": "1500000"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "talidator-keeper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "simulate": "cd .. && cre workflow simulate talidator-keeper --target staging-settings",
+    "simulate:broadcast": "cd .. && cre workflow simulate talidator-keeper --target staging-settings --broadcast"
+  },
+  "dependencies": {
+    "@chainlink/cre-sdk": "1.23.0",
+    "viem": "2.56.9",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

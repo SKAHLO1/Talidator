@@ -1,0 +1,14 @@
+# ==========================================================================
+# CRE PROJECT SETTINGS — Talidator
+# RPCs used by `cre workflow simulate` / deploy. Swap in your Alchemy URL for higher limits:
+#   https://monad-testnet.g.alchemy.com/v2/<ALCHEMY_API_KEY>
+# ==========================================================================
+staging-settings:
+  rpcs:
+    - chain-name: monad-testnet
+      url: https://testnet-rpc.monad.xyz
+
+production-settings:
+  rpcs:
+    - chain-name: monad-testnet
+      url: https://testnet-rpc.monad.xyz
