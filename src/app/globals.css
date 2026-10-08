@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f8f9;
+  --foreground: #0f1b22;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+
+  --color-ink: #0f1b22;
+  --color-muted: #6b7a85;
+  --color-line: #e7ecef;
+  --color-navy: #0c1a21;
+  --color-navy-2: #13262e;
+  --color-teal: #2a9d8f;
+  --color-teal-dark: #1f7f74;
+  --color-teal-soft: #e6f5f2;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.card {
+  @apply rounded-xl border border-line bg-white;
+}
+
+.hero-bg {
+  background:
+    radial-gradient(ellipse 60% 90% at 78% 50%, rgba(42, 157, 143, 0.18), transparent 70%),
+    linear-gradient(135deg, #0b171d 0%, #0e2027 55%, #0a1519 100%);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float { animation: float 6s ease-in-out infinite; }
+
+@keyframes slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in { animation: slide-in 0.2s ease-out; }
+
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop 0.25s ease-out; }
