@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Talidator — per-user data, keyed by the lowercase wallet address that signed in (Firebase uid).
+// Profiles are created by the server on first sign-in; clients may only edit their own documents.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function shortString(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn(uid);
+      // address / createdAt / lastLoginAt are server-owned.
+      allow update: if signedIn(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'avatarUrl', 'alerts', 'alertsSeenAt', 'notesKey'])
+        && shortString(request.resource.data.displayName, 60)
+        && shortString(request.resource.data.avatarUrl, 500)
+        && request.resource.data.alerts is map
+        && request.resource.data.alertsSeenAt is number;
+      allow create, delete: if false;
+
+      match /watchlist/{itemId} {
+        allow read, delete: if signedIn(uid);
+        allow create, update: if signedIn(uid)
+          && request.resource.data.kind in ['agent', 'request']
+          && request.resource.data.ref == itemId
+          && shortString(request.resource.data.label, 120)
+          && request.resource.data.keys().hasOnly(['kind', 'ref', 'label', 'addedAt']);
+      }
+
+      match /notes/{agent} {
+        allow read, delete: if signedIn(uid);
+        allow create, update: if signedIn(uid)
+          && shortString(request.resource.data.label, 40)
+          && shortString(request.resource.data.note, 1000)
+          // `enc` = passkey-encrypted body (Mera PRF-derived AES-GCM key); the server never sees plaintext.
+          && (!('enc' in request.resource.data) || (request.resource.data.enc is map
+               && shortString(request.resource.data.enc.iv, 32) && shortString(request.resource.data.enc.ct, 2000)))
+          && request.resource.data.keys().hasOnly(['label', 'note', 'enc', 'updatedAt']);
+      }
+    }
+
+    // SIWE nonces are server-only (Admin SDK bypasses rules).
+    match /siweNonces/{nonce} {
+      allow read, write: if false;
+    }
+
+    // AI audit verdicts: written by /api/audit, served through it — no direct client access.
+    match /audits/{requestHash} {
+      allow read, write: if false;
+    }
+  }
+}
