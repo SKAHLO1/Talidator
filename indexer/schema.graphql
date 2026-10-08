@@ -1,0 +1,195 @@
+# Talidator — indexed protocol state. Addresses and hashes are stored lowercase.
+
+enum AgentRole {
+  TRADER
+  VALIDATOR
+  CHALLENGER
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  PASSED
+  FAILED
+}
+
+enum EscrowState {
+  FUNDED
+  RELEASED
+  REFUNDED
+}
+
+enum ChallengeStatus {
+  OPEN
+  UPHELD
+  REJECTED
+}
+
+enum ValidatorStatus {
+  ACTIVE
+  UNBONDING
+  WITHDRAWN
+}
+
+"""ERC-8004 agent identity (ERC-721 token)."""
+type Agent {
+  id: ID! # tokenId
+  tokenId: BigInt!
+  owner: String! @index
+  wallet: String! @index
+  role: AgentRole!
+  name: String!
+  tokenURI: String!
+  registeredAt: Int!
+  registeredTx: String!
+  "Derived from final outcomes posted to the ReputationRegistry"
+  reputationCount: Int!
+  reputationPassed: Int!
+  reputationScoreSum: Int!
+  "Average score x100 (9820 = 98.20); 0 while there are no outcomes"
+  reputationScore: Int!
+  requests: [ValidationRequest!]! @derivedFrom(field: "agent")
+}
+
+"""A bonded validator, keyed by its agent wallet. Aggregates every vote, review and slash."""
+type Validator {
+  id: ID! # wallet
+  agentId: BigInt!
+  bonded: BigInt!
+  totalBonded: BigInt!
+  slashed: BigInt!
+  slashCount: Int!
+  status: ValidatorStatus!
+  unbondAt: Int
+  votesCast: Int!
+  votesPass: Int!
+  votesFail: Int!
+  "Votes that matched the quorum's final (non-overturned) outcome"
+  votesAgreed: Int!
+  "Votes on results later overturned by an upheld challenge"
+  votesOverturned: Int!
+  reviewsCast: Int!
+  firstBondedAt: Int!
+  votes: [Vote!]! @derivedFrom(field: "validator")
+}
+
+"""One ValidationRegistry.validationRequest() and everything that happened to it."""
+type ValidationRequest {
+  id: ID! # requestHash
+  seq: Int! @index
+  agent: Agent
+  agentId: BigInt!
+  requester: String! @index
+  validators: [String!]!
+  threshold: Int!
+  requestURI: String!
+  "Parsed from the data: URI claim, when it is a Talidator trade claim"
+  pair: String
+  side: String
+  size: Float
+  deadline: Int!
+  status: RequestStatus! @index
+  passVotes: Int!
+  failVotes: Int!
+  overturned: Boolean!
+  "Effective outcome after any overturn; null while pending"
+  passed: Boolean
+  createdAt: Int! @index
+  createdTx: String!
+  finalizedAt: Int
+  escrow: EscrowDeal
+  challenge: Challenge
+  reputationPosted: Boolean!
+  votes: [Vote!]! @derivedFrom(field: "request")
+  events: [ProtocolEvent!]! @derivedFrom(field: "request")
+}
+
+type Vote {
+  id: ID! # requestHash-validator
+  request: ValidationRequest!
+  validator: Validator!
+  pass: Boolean!
+  evidenceHash: String!
+  timestamp: Int!
+  txHash: String!
+}
+
+"""Escrow deposit. Created by Escrow.deposit(), which may happen before the request is posted."""
+type EscrowDeal {
+  id: ID! # requestHash
+  payer: String! @index
+  payee: String! @index
+  amount: BigInt!
+  state: EscrowState!
+  fundedAt: Int!
+  settledAt: Int
+  settledTx: String
+}
+
+type Challenge {
+  id: ID! # challengeId
+  request: ValidationRequest!
+  challenger: String! @index
+  bond: BigInt!
+  reviewers: [String!]!
+  status: ChallengeStatus! @index
+  upholdVotes: Int!
+  rejectVotes: Int!
+  slashedTotal: BigInt!
+  challengerPayout: BigInt!
+  openedAt: Int!
+  resolvedAt: Int
+  reviews: [Review!]! @derivedFrom(field: "challenge")
+}
+
+type Review {
+  id: ID! # challengeId-reviewer
+  challenge: Challenge!
+  reviewer: String! @index
+  uphold: Boolean!
+  timestamp: Int!
+  txHash: String!
+}
+
+type Slash {
+  id: ID! # tx-logIndex
+  validator: Validator!
+  amount: BigInt!
+  recipient: String!
+  timestamp: Int!
+  txHash: String!
+}
+
+"""Activity feed: one row per protocol event, with the addresses it involves (for per-user feeds and alerts)."""
+type ProtocolEvent {
+  id: ID! # tx-logIndex
+  kind: String! @index
+  request: ValidationRequest
+  requestHash: String @index
+  actors: [String!]!
+  title: String!
+  detail: String!
+  timestamp: Int! @index
+  blockNumber: Int!
+  txHash: String!
+}
+
+"""Network-wide aggregates (single row, id "global")."""
+type ProtocolStats {
+  id: ID!
+  agents: Int!
+  validators: Int!
+  activeValidators: Int!
+  requests: Int!
+  passed: Int!
+  failed: Int!
+  overturned: Int!
+  challenges: Int!
+  openChallenges: Int!
+  upheldChallenges: Int!
+  totalBonded: BigInt!
+  totalSlashed: BigInt!
+  totalEscrowed: BigInt!
+  totalReleased: BigInt!
+  totalRefunded: BigInt!
+}
