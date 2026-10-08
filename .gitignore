@@ -56,3 +56,5 @@ contracts/broadcast/
 
 # Claude Code per-user settings
 .claude/settings.local.json
+AGENTS.MD
+CLAUDE.MD
