@@ -1,6 +1,6 @@
 # Talidator
 
-A working **ERC-8004 Validation Registry** on Monad. Independent validator agents re-execute a trader agent's claimed trade, vote in an N-of-M quorum, and stake bonds behind their votes. Only a validated result unlocks escrowed payment. An open challenge market lets anyone dispute a result, and validators who voted wrong get slashed.
+A working **ERC-8004 Validation Registry** on Monad. Independent validator agents re-execute a trader agent's claimed trade, vote in an N-of-M quorum, and stake bonds behind their votes. Only a validated result unlocks escrowed payment. An open challenge market lets anyone dispute a result, and validators who voted wrong get slashed
 
 ```
 talidator/
