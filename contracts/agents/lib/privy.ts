@@ -15,7 +15,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PrivyClient } from "@privy-io/node";
 import { parseEther, toHex, type Address, type Hex, type TypedDataDefinition } from "viem";
-import { C, chain } from "./clients";
+import { C, chain, publicClient } from "./clients";
 import { env } from "./env";
 import type { AgentSigner } from "./signer";
 
@@ -70,7 +70,8 @@ function policyFor(role: "validator" | "challenger") {
       chain_type: "ethereum" as const,
       rules: [
         {
-          name: "Sign Talidator votes (EIP-712) for this ValidationRegistry on Monad only",
+          // Privy caps rule names at 49 chars.
+          name: "Sign Talidator votes (EIP-712, Monad only)",
           method: "eth_signTypedData_v4",
           action: "ALLOW",
           conditions: [
@@ -79,7 +80,7 @@ function policyFor(role: "validator" | "challenger") {
           ],
         },
         register,
-        tx(`Bond stake (≤ ${env("PRIVY_MAX_BOND") ?? "1"} MON per tx)`, [to(C.staking.address), call("bond"), maxValue(maxBond)]),
+        tx("Bond stake (capped per tx)", [to(C.staking.address), call("bond"), maxValue(maxBond)]),
         tx("Begin unbonding", [to(C.staking.address), call("beginUnbonding"), maxValue(0n)]),
         tx("Withdraw unbonded stake", [to(C.staking.address), call("withdraw"), maxValue(0n)]),
         tx("Review challenges", [to(C.market.address), call("submitReview"), maxValue(0n)]),
@@ -143,9 +144,21 @@ function privySigner(walletId: string, address: Address): AgentSigner {
       return res.signature as Hex;
     },
     async send({ to: target, data, value }) {
+      // Monad reserves gas_limit × max_fee up front, so set both ourselves instead of Privy's padded defaults.
+      const [gas, fees] = await Promise.all([
+        publicClient.estimateGas({ account: address, to: target, data, value }),
+        publicClient.estimateFeesPerGas(),
+      ]);
       const res = await eth().sendTransaction(walletId, {
         caip2: CAIP2,
-        params: { transaction: { to: target, data, value: value ? toHex(value) : undefined, chain_id: chain.id } },
+        params: {
+          transaction: {
+            to: target, data, value: value ? toHex(value) : undefined, chain_id: chain.id,
+            gas_limit: toHex((gas * 6n) / 5n),
+            max_fee_per_gas: toHex(fees.maxFeePerGas!),
+            max_priority_fee_per_gas: toHex(fees.maxPriorityFeePerGas!),
+          },
+        },
       });
       return res.hash as Hex;
     },
