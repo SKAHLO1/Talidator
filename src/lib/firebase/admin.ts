@@ -13,8 +13,8 @@ import { getFirestore } from "firebase-admin/firestore";
  */
 const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-// Env UIs usually store the PEM with literal "\n" sequences.
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+// Env UIs usually store the PEM with literal "\n" sequences, and a pasted .env line may keep its quotes.
+const privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim().replace(/^"|"$/g, "").replace(/\\n/g, "\n");
 const emulated = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST && process.env.FIRESTORE_EMULATOR_HOST);
 
 export const adminConfigured = Boolean(projectId && (emulated || (clientEmail && privateKey)));

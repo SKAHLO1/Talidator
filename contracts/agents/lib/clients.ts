@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { createPublicClient, createWalletClient, formatEther, http, type Account, type Hex } from "viem";
+import { createPublicClient, createWalletClient, fallback, formatEther, http, type Account, type Hex } from "viem";
 import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
 import { foundry, monadTestnet } from "viem/chains";
 import {
@@ -16,7 +16,9 @@ const rpcUrl = env("RPC_URL") || (chain.id === monadTestnet.id ? alchemyUrl : un
 export const rpcProvider = env("RPC_URL") ? "custom" : alchemyUrl && chain.id === monadTestnet.id ? "alchemy" : "public";
 
 // Multicall batching keeps Chainlink round reads inside public-RPC rate limits (Monad: 15 req/s).
-export const publicClient = createPublicClient({ chain, transport: http(rpcUrl), pollingInterval: 500, batch: { multicall: { wait: 16 } } });
+// Alchemy falls back to the public RPC on auth/transport errors (bad key, outage); reverts are not retried.
+const transport = () => (rpcProvider === "alchemy" ? fallback([http(rpcUrl), http(chain.rpcUrls.default.http[0])]) : http(rpcUrl));
+export const publicClient = createPublicClient({ chain, transport: transport(), pollingInterval: 500, batch: { multicall: { wait: 16 } } });
 
 // Anvil's well-known public test mnemonic — only ever used for the local chain.
 const ANVIL_MNEMONIC = "test test test test test test test test test test test junk";
@@ -31,7 +33,7 @@ export const hd = (index: number) => {
 /** Deployer / client / relayer / arbiter. */
 export const operator: Account = env("PRIVATE_KEY") ? privateKeyToAccount(env("PRIVATE_KEY") as Hex) : hd(0);
 
-export const wallet = (account: Account) => createWalletClient({ account, chain, transport: http(rpcUrl) });
+export const wallet = (account: Account) => createWalletClient({ account, chain, transport: transport() });
 
 // Agents read the deploy script's output directly (the web app only receives the Monad testnet one).
 const depFile = fileURLToPath(new URL(`../../deployments/${chain.id}.json`, import.meta.url));
