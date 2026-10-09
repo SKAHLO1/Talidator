@@ -13,6 +13,7 @@
     "demo:local": "tsx agents/demo.ts --network local",
     "demo:monad": "tsx agents/demo.ts --network monadTestnet",
     "validator": "tsx agents/validator-daemon.ts",
+    "validator:monad": "tsx agents/validator-daemon.ts --network monadTestnet",
     "request": "tsx agents/request.ts",
     "deploy:keeper": "tsx scripts/deploy.ts --network monadTestnet --keeper",
     "typecheck": "tsc -p tsconfig.json"
