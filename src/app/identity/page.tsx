@@ -25,7 +25,10 @@ export default function IdentityPage() {
   const [role, setRole] = useState<AgentRole>("trader");
   const [agentWallet, setAgentWallet] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
-  const walletTaken = !!me.address && state.agents.some((a) => a.address.toLowerCase() === (agentWallet || me.address!).toLowerCase());
+  const takenBy = me.address ? state.agents.find((a) => a.address.toLowerCase() === (agentWallet || me.address!).toLowerCase()) : undefined;
+  const walletTaken = !!takenBy;
+  // The field defaults to the connected wallet; once that wallet has an identity it's not an error, just done.
+  const ownWalletRegistered = walletTaken && !agentWallet;
   const walletValid = !agentWallet || isAddress(agentWallet);
 
   const submit = async (e: FormEvent) => {
@@ -132,8 +135,14 @@ export default function IdentityPage() {
                   placeholder={me.address ?? "0x…"}
                   className="w-full rounded-lg border border-line px-3 py-2 font-mono text-xs outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
                 />
-                <span className={cx("mt-1 block text-[11px]", walletTaken || !walletValid ? "text-rose-600" : "text-muted")}>
-                  {!walletValid ? "Not a valid address" : walletTaken ? "This wallet already has an identity — enter a different agent wallet" : "Defaults to your connected wallet. Each wallet can back one agent."}
+                <span className={cx("mt-1 block text-[11px]", !walletValid || (walletTaken && !ownWalletRegistered) ? "text-rose-600" : "text-muted")}>
+                  {!walletValid
+                    ? "Not a valid address"
+                    : ownWalletRegistered
+                      ? `Your wallet is registered as ${takenBy!.name} (#${takenBy!.tokenId}). Each wallet backs one agent — enter another agent wallet to register more.`
+                      : walletTaken
+                        ? `This wallet already backs ${takenBy!.name} (#${takenBy!.tokenId}) — enter a different agent wallet`
+                        : "Defaults to your connected wallet. Each wallet can back one agent."}
                 </span>
               </label>
             <Button type="submit" className="w-full" disabled={!me.connected || !name.trim() || walletTaken || !walletValid}>Mint identity</Button>
