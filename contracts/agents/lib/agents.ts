@@ -111,7 +111,7 @@ export async function ensureSetup(list: AgentAccount[]) {
     publicClient.readContract({ ...C.staking, functionName: "minBond" }),
     publicClient.readContract({ ...C.market, functionName: "challengeBond" }),
   ]);
-  const gas = parseEther(env("AGENT_GAS_BUFFER") ?? "0.03");
+  const gas = parseEther(env("AGENT_GAS_BUFFER") ?? "0.1");
   const targetBond = (minBond * 3n) / 2n;
 
   for (const a of list) {
