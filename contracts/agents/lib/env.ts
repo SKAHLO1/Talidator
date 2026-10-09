@@ -9,6 +9,8 @@ function arg(name: string) {
   return i !== -1 ? process.argv[i + 1] : undefined;
 }
 
-export const NETWORK = (arg("network") ?? process.env.NETWORK ?? "local") as "local" | "monadTestnet";
+// npm in PowerShell swallows `--network` and passes only its value, so accept a bare network name too.
+const bareNetwork = process.argv.slice(2).find((a) => a === "monadTestnet" || a === "local");
+export const NETWORK = (arg("network") ?? bareNetwork ?? process.env.NETWORK ?? "local") as "local" | "monadTestnet";
 export const env = (key: string) => process.env[key];
 export { arg };
