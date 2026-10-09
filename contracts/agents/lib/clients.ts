@@ -31,7 +31,11 @@ export const hd = (index: number) => {
 };
 
 /** Deployer / client / relayer / arbiter. */
-export const operator: Account = env("PRIVATE_KEY") ? privateKeyToAccount(env("PRIVATE_KEY") as Hex) : hd(0);
+// Foundry accepts keys without the 0x prefix; viem doesn't.
+const operatorKey = env("PRIVATE_KEY")?.trim();
+export const operator: Account = operatorKey
+  ? privateKeyToAccount((operatorKey.startsWith("0x") ? operatorKey : `0x${operatorKey}`) as Hex)
+  : hd(0);
 
 export const wallet = (account: Account) => createWalletClient({ account, chain, transport: transport() });
 
