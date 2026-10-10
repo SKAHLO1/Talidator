@@ -99,21 +99,40 @@ function policyFor(role: "validator" | "challenger") {
   };
 }
 
-/** Create (once) and cache the role policy; returns its id. */
+const externalIdOf = (slug: string) => `talidator-${chain.id}-${slug}`;
+/** A wallet that always exists once the role has been provisioned — its policy is the role's policy. */
+const ANCHOR = { validator: "validator-alpha", challenger: "challenger" } as const;
+
+async function findWallet(externalId: string) {
+  for await (const w of privy().wallets().list({ external_id: externalId, chain_type: "ethereum" })) return w;
+  return null;
+}
+
+/**
+ * The role policy's id, reused across restarts so hosts with ephemeral disks (Render, containers) don't mint a
+ * new policy each boot. Lookup order: PRIVY_<ROLE>_POLICY_ID env → local cache → the policy already bound to the
+ * role's anchor wallet → create a new one.
+ */
 async function ensurePolicy(role: "validator" | "challenger") {
+  const fromEnv = env(`PRIVY_${role.toUpperCase()}_POLICY_ID`);
+  if (fromEnv) return fromEnv;
   const state = loadState();
   if (state.policies[role]) return state.policies[role]!;
-  const policy = await privy().policies().create(policyFor(role) as Parameters<ReturnType<PrivyClient["policies"]>["create"]>[0]);
-  state.policies[role] = policy.id;
-  saveState(state);
-  return policy.id;
+  const anchor = await findWallet(externalIdOf(ANCHOR[role]));
+  const id = anchor?.policy_ids[0] ?? (await privy().policies().create(policyFor(role) as Parameters<ReturnType<PrivyClient["policies"]>["create"]>[0])).id;
+  state.policies[role] = id;
+  try {
+    saveState(state);
+  } catch {
+    /* read-only filesystem: fine, the anchor-wallet lookup recovers the id next boot */
+  }
+  return id;
 }
 
 /** Find the agent's wallet by its stable external id, or create it bound to the role policy. */
 async function ensureWallet(externalId: string, role: "validator" | "challenger", displayName: string) {
-  for await (const w of privy().wallets().list({ external_id: externalId, chain_type: "ethereum" })) {
-    return w;
-  }
+  const existing = await findWallet(externalId);
+  if (existing) return existing;
   const policyId = await ensurePolicy(role);
   return privy().wallets().create({
     chain_type: "ethereum",
@@ -167,6 +186,6 @@ function privySigner(walletId: string, address: Address): AgentSigner {
 
 /** Load (or provision) a Privy-backed signer for a validator / challenger agent. */
 export async function privyAgentSigner(slug: string, role: "validator" | "challenger", displayName: string) {
-  const w = await ensureWallet(`talidator-${chain.id}-${slug}`, role, displayName);
+  const w = await ensureWallet(externalIdOf(slug), role, displayName);
   return privySigner(w.id, w.address as Address);
 }
