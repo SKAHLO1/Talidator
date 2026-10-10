@@ -1,5 +1,5 @@
 /**
- * Talidator auditor agent — Qwen 3.8 Max with tool use.
+ * Talidator auditor agent — a Qwen model (QWEN_MODEL, default qwen3.8-max) with tool use.
  *
  * Given a validation request, the model plans an investigation and calls tools that read the chain
  * (request, votes, challenge state, validator track records, agent reputation), decode the trader's claim,
@@ -14,6 +14,7 @@ import type {
   challengeMarketAbi, identityRegistryAbi, reputationRegistryAbi, validationRegistryAbi, validatorStakingAbi,
 } from "../chain/abi";
 import { decodeClaim, evaluate } from "../chain/claims";
+import { QWEN_DEFAULTS } from "./model";
 import { PAIRS, recentRounds, type Pair } from "../chain/market";
 
 export interface AuditContracts {
@@ -52,10 +53,7 @@ export interface AuditResult extends AuditVerdict {
   createdAt: number;
 }
 
-export const QWEN_DEFAULTS = {
-  baseUrl: "https://maas.qwencloudapi.com/compatible-mode/v1",
-  model: "qwen3.8-max",
-};
+export { QWEN_DEFAULTS };
 
 const STATUS = ["None", "Pending", "Passed", "Failed"] as const;
 const CHALLENGE = ["None", "Open", "Upheld", "Rejected"] as const;
