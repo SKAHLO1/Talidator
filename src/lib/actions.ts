@@ -21,6 +21,15 @@ export interface StartInput {
   validators?: string[];
 }
 
+/**
+ * Wake the validator daemon (e.g. a Render free web service that sleeps after 15 idle minutes) before it's
+ * needed. Fire-and-forget: `no-cors` because the daemon sends no CORS headers — the request still reaches it.
+ */
+const DAEMON_URL = process.env.NEXT_PUBLIC_DAEMON_URL?.replace(/\/+$/, "");
+function wakeDaemon() {
+  if (DAEMON_URL) fetch(`${DAEMON_URL}/health`, { mode: "no-cors", cache: "no-store" }).catch(() => {});
+}
+
 function errorMessage(e: unknown) {
   if (e instanceof BaseError) return e.shortMessage;
   return e instanceof Error ? e.message.split("\n")[0] : String(e);
@@ -70,6 +79,7 @@ export function useActions() {
   return {
     startValidation: (input: StartInput) =>
       guarded("Could not start validation", async (c, me) => {
+        wakeDaemon(); // warms up while the user confirms the wallet transactions
         const trader = state.agents.find((a) => a.address === input.agent);
         if (!trader) throw new Error("Pick a trader agent");
         if (trader.owner.toLowerCase() !== me.toLowerCase() && trader.address.toLowerCase() !== me.toLowerCase()) {
@@ -104,6 +114,7 @@ export function useActions() {
 
     challenge: (id: number) =>
       guarded("Challenge failed", async (c) => {
+        wakeDaemon(); // reviewers and the arbiter run in the daemon
         const r = state.requests.find((x) => x.id === id);
         if (!r) throw new Error("Request not found");
         if (!state.params) throw new Error("Protocol parameters not loaded yet");
