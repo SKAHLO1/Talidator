@@ -13,6 +13,7 @@
  *   • posts reputation for final outcomes
  *   • acts as arbiter when a challenge has no reviewers or its review deadline passed without a majority
  */
+import { createServer } from "node:http";
 import type { Hex } from "viem";
 import { ensureSetup, getChallenger, getValidatorNetwork, type AgentAccount } from "./lib/agents";
 import { auditorEnabled, autoAudit } from "./lib/auditor";
@@ -147,8 +148,24 @@ async function tick() {
   for (let id = count; id > 0n && id > count - 20n; id--) await handleChallenge(id, now, arbiter);
 }
 
+/**
+ * Health endpoint for hosts that need an HTTP port (e.g. a Render web service). Bound before setup so the
+ * host sees the port immediately; answers 503 if polling has stalled for 5 minutes so uptime monitors alert.
+ */
+const health = { status: "starting", startedAt: Date.now(), lastTickAt: 0, lastError: "" };
+function serveHealth() {
+  const port = Number(env("PORT"));
+  if (!port) return;
+  createServer((_req, res) => {
+    const stale = health.status === "running" && Date.now() - health.lastTickAt > 5 * 60_000;
+    res.writeHead(stale ? 503 : 200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ...health, stale, chainId: chain.id, validators: managed.size }));
+  }).listen(port, () => log.info(`health endpoint on :${port}`));
+}
+
 async function main() {
   log.title(`Talidator validator daemon · ${chain.name}`);
+  serveHealth();
   const validators = await getValidatorNetwork();
   for (const v of validators) managed.set(v.address.toLowerCase(), v);
   await ensureSetup(validators);
@@ -162,11 +179,14 @@ async function main() {
   }
   log.info(`relayer / arbiter: ${operator.address}${KEEPER ? " · keeper: on" : " · keeper: off (CRE workflow)"} · polling every ${POLL_MS}ms`);
 
+  health.status = "running";
   for (;;) {
     try {
       await tick();
+      health.lastTickAt = Date.now();
     } catch (e) {
-      log.warn(`poll failed: ${(e as Error).message.split("\n")[0]}`);
+      health.lastError = (e as Error).message.split("\n")[0]!;
+      log.warn(`poll failed: ${health.lastError}`);
     }
     await new Promise((r) => setTimeout(r, POLL_MS));
   }
