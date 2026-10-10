@@ -7,6 +7,7 @@
 # Required env: PRIVATE_KEY (operator / relayer, funded with MON) and either PRIVY_APP_ID + PRIVY_APP_SECRET
 # (validators on Privy server wallets) or MNEMONIC. Optional: ALCHEMY_API_KEY / RPC_URL, AUDITOR=on + QWEN_API_KEY,
 # KEEPER=off (when the Chainlink CRE workflow is the keeper), COLLUDING, POLL_MS, AGENT_GAS_BUFFER.
+# PORT (set automatically by Render web services) serves a /health JSON endpoint for uptime pingers.
 FROM node:22-slim
 
 WORKDIR /app
