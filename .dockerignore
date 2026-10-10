@@ -7,3 +7,5 @@ contracts/lib
 **/.env
 **/.env.*
 *.log
+*-firebase-adminsdk-*.json
+**/.privy-state.json
