@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bot, ChevronDown, Loader2, RefreshCw } from "lucide-react";
 import type { AuditResult } from "@/lib/agent/auditor";
+import { modelLabel } from "@/lib/agent/model";
 import { cx } from "@/lib/format";
 import { Button } from "./ui";
 
@@ -21,10 +22,11 @@ const VERDICT = {
   inconclusive: { label: "Inconclusive", cls: "bg-slate-100 text-slate-700 ring-slate-200" },
 } as const;
 
-/** Qwen 3.8 Max auditor for one request (server-side agent via /api/audit). */
+/** Qwen auditor agent for one request (server-side via /api/audit); shows the model actually configured / used. */
 export function AuditPanel({ requestHash, challengeOpen }: { requestHash: string; challengeOpen: boolean }) {
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [enabled, setEnabled] = useState(true);
+  const [model, setModel] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSteps, setShowSteps] = useState(false);
@@ -37,6 +39,7 @@ export function AuditPanel({ requestHash, challengeOpen }: { requestHash: string
         if (!live) return;
         setAudit(j.audit ?? null);
         setEnabled(j.enabled !== false);
+        if (typeof j.model === "string") setModel(j.model);
       })
       .catch(() => {});
     return () => {
@@ -65,13 +68,17 @@ export function AuditPanel({ requestHash, challengeOpen }: { requestHash: string
 
   if (!enabled && !audit) return null;
   const v = audit ? VERDICT[audit.verdict] : null;
+  // The stored audit records the model that produced it; otherwise show the configured one.
+  const shownModel = audit?.model ?? model;
 
   return (
     <div className="rounded-xl border border-line p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-2 text-sm font-medium text-ink">
           <Bot size={16} className="text-teal" /> AI auditor
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-muted">Qwen 3.8 Max · tool use</span>
+          {shownModel && (
+            <span title={shownModel} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-muted">{modelLabel(shownModel)} · tool use</span>
+          )}
         </p>
         {audit && enabled && (
           <button onClick={() => run(true)} disabled={running} className="text-muted hover:text-ink disabled:opacity-50" aria-label="Re-run audit" title="Re-run audit">
