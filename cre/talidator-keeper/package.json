@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "simulate": "cd .. && cre workflow simulate talidator-keeper --target staging-settings",
-    "simulate:broadcast": "cd .. && cre workflow simulate talidator-keeper --target staging-settings --broadcast"
+    "simulate": "cd .. && cre workflow simulate talidator-keeper --target staging-settings --non-interactive --trigger-index 0",
+    "simulate:broadcast": "cd .. && cre workflow simulate talidator-keeper --target staging-settings --non-interactive --trigger-index 0 --broadcast"
   },
   "dependencies": {
     "@chainlink/cre-sdk": "1.23.0",
