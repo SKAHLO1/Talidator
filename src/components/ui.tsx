@@ -1,19 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Bot, ShieldCheck, UserRound, Swords } from "lucide-react";
 import { explorerTx } from "@/lib/chain/config";
 import { cx } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Asset, RequestStatus, Vote } from "@/lib/types";
 
+/**
+ * Talidator mark: an outer bond, a quorum of four validators, and the verified core.
+ * Standalone files (mark, app icon, wordmarks) live in public/brand/.
+ */
 export function Logo({ className = "h-8 w-8" }: { className?: string }) {
+  // useId() contains ":" / "«»", which break url(#…) references in some browsers.
+  const id = `tl${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden>
-      <path d="M16 2 30 16 16 30 2 16Z" stroke="#3fbfae" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M16 8 24 16 16 24 8 16Z" stroke="#3fbfae" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M16 13 19 16 16 19 13 16Z" fill="#3fbfae" />
+      <defs>
+        <linearGradient id={`${id}-ring`} x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#6fe0d0" />
+          <stop offset="1" stopColor="#1f8f82" />
+        </linearGradient>
+        <linearGradient id={`${id}-core`} x1="12.5" y1="12.5" x2="19.5" y2="19.5" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#8af0e2" />
+          <stop offset="1" stopColor="#2a9d8f" />
+        </linearGradient>
+      </defs>
+      <path d="M16 2.6 29.4 16 16 29.4 2.6 16Z" stroke={`url(#${id}-ring)`} strokeWidth="1.9" strokeLinejoin="round" />
+      <g stroke="#3fbfae" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity=".85">
+        <path d="M12.64 11.36 16 8l3.36 3.36" />
+        <path d="M20.64 12.64 24 16l-3.36 3.36" />
+        <path d="M19.36 20.64 16 24l-3.36-3.36" />
+        <path d="M11.36 19.36 8 16l3.36-3.36" />
+      </g>
+      <path d="M16 12.4 19.6 16 16 19.6 12.4 16Z" fill={`url(#${id}-core)`} />
+      <path d="M16 12.4 12.4 16H16Z" fill="#fff" fillOpacity=".38" />
+      <path d="M19.6 16 16 19.6V16Z" fill="#0c1a21" fillOpacity=".18" />
     </svg>
   );
 }
