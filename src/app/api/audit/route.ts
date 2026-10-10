@@ -1,5 +1,6 @@
 import { isHex, type Hex, type PublicClient } from "viem";
 import { runAudit, type AuditResult } from "@/lib/agent/auditor";
+import { QWEN_DEFAULTS } from "@/lib/agent/model";
 import { contracts, publicClient } from "@/lib/chain/config";
 import { adminConfigured, adminDb } from "@/lib/firebase/admin";
 
@@ -24,7 +25,10 @@ export async function GET(request: Request) {
   const hash = new URL(request.url).searchParams.get("requestHash");
   if (!valid(hash)) return bad("Expected ?requestHash=0x…");
   const audit = await cached(hash);
-  return Response.json({ audit, enabled: Boolean(apiKey) }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json(
+    { audit, enabled: Boolean(apiKey), model: llm.model || QWEN_DEFAULTS.model },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 /** Run (or return a fresh cached) Qwen audit for a request. */
