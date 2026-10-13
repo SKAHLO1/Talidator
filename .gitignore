@@ -58,3 +58,6 @@ contracts/broadcast/
 .claude/settings.local.json
 AGENTS.MD
 CLAUDE.MD
+
+# Rendered pitch video (large binary)
+pitch-video/
